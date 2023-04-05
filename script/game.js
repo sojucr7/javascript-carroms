@@ -1,83 +1,115 @@
 const canvas = document.getElementById("canvas");
-canvas.width = 582;
-canvas.height = 578;
-const ctx = canvas.getContext("2d");
+
+const context = canvas.getContext("2d");
 
 const ball = {
-    x: 160,
-    y: canvas.height - 120,
+    x: 260,
+    y: 120,
     radius: 11,
     color: "orange",
 };
 
 const stick = {
-    length: 100,
+    length: 50,
     thickness: 10,
     color: "red",
 };
-
 
 const spaceBetween = 10;
 
 const board = new Image();
 
-let stickAttachX, stickAttachY, angle, arrowTipX, arrowTipY, arrowTail1X, arrowTail1Y, arrowTail2X, arrowTail2Y
+let stickAttachX, stickAttachY, angle, arrowTipX, arrowTipY, arrowTail1X, arrowTail1Y, arrowTail2X, arrowTail2Y;
 
-function loadImage(url) {
-    return new Promise(r => { let i = new Image(); i.onload = (() => r(i)); i.src = url; });
-}
+let shootingPower = 0;
 
-async function setup() {
+let mouseDownId;
 
+canvas.width = 582;
+
+canvas.height = 578;
+
+function setup() {
     board.src = "board.jpg";
 }
+
 document.addEventListener("mousemove", function (event) {
-    const dx = event.clientX - ball.x;
-    const dy = event.clientY - ball.y;
-    angle = Math.atan2(dy, dx);
+    const deltaX = event.clientX - ball.x;
+    const deltaY = event.clientY - ball.y;
+    angle = Math.atan2(deltaY, deltaX);
     stickAttachX = ball.x + (ball.radius + spaceBetween) * Math.cos(angle);
     stickAttachY = ball.y + (ball.radius + spaceBetween) * Math.sin(angle);
 });
 
+document.addEventListener("mousedown", function (event) {
+    mouseDownId = setInterval(function () {
+        if (shootingPower < 6) {
+            shootingPower += .5;
+        }
+        document.documentElement.style
+            .setProperty('--progress-bar-width', `${shootingPower / 6 * 100}%`);
+    }, 100)
+});
+
+document.addEventListener("mouseup", function (event) {
+    console.log("SHOOT!!!")
+
+    if (mouseDownId) {
+        clearInterval(mouseDownId)
+    }
+
+    shootingPower = 0;
+    document.documentElement.style
+        .setProperty('--progress-bar-width', `0%`);
+
+    //TODO - calculate carrom piece velocity
+    // let y = Math.sin(angle) * shootingPower
+    // let x = Math.cos(angle) * shootingPower;
+    // console.log(x, y)
+});
+
 function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(board, 0, 0);
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(board, 0, 0);
+
     drawBall()
-    let tox = stickAttachX + stick.length * Math.cos(angle)
-    let toy = stickAttachY + stick.length * Math.sin(angle)
-    drawArrow(stickAttachX, stickAttachY, tox, toy)
+
+    let stickEndX = stickAttachX + stick.length * Math.cos(angle)
+    let stickEndY = stickAttachY + stick.length * Math.sin(angle)
+    drawArrow(stickAttachX, stickAttachY, stickEndX, stickEndY)
+
     window.requestAnimationFrame(draw);
 }
 
-function drawBall(){
-    ctx.beginPath();
-    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-    ctx.fillStyle = ball.color;
-    ctx.fill();
-    ctx.closePath();
+function drawBall() {
+    context.beginPath();
+    context.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+    context.fillStyle = ball.color;
+    context.fill();
+    context.closePath();
 }
 
 function drawArrow(x0, y0, x1, y1) {
-    const width = 2;
+    const width = 6;
     const headLen = 4;
     const headAngle = Math.PI / 6;
+    context.lineWidth = width;
+    context.fillStyle = 'black';
 
-    ctx.lineWidth = width;
-    ctx.fillStyle = 'black';
+    context.beginPath();
+    context.moveTo(x0, y0);
+    context.lineTo(x1, y1);
+    context.stroke();
 
-    ctx.beginPath();
-    ctx.moveTo(x0, y0);
-    ctx.lineTo(x1, y1);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.lineTo(x1, y1);
-    ctx.lineTo(x1 - headLen * Math.cos(angle - headAngle), y1 - headLen * Math.sin(angle - headAngle));
-    ctx.lineTo(x1 - headLen * Math.cos(angle + headAngle), y1 - headLen * Math.sin(angle + headAngle));
-    ctx.closePath();
-    ctx.stroke();
-    ctx.fill();
-    ctx.closePath();
+    context.beginPath();
+    context.lineTo(x1, y1);
+    context.lineTo(x1 - headLen * Math.cos(angle - headAngle), y1 - headLen * Math.sin(angle - headAngle));
+    context.lineTo(x1 - headLen * Math.cos(angle + headAngle), y1 - headLen * Math.sin(angle + headAngle));
+    context.closePath();
+    context.stroke();
+    context.fill();
 }
+
 setup()
+
 draw()

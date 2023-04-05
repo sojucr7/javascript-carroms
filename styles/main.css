@@ -1,15 +1,40 @@
-*{
-    margin: 0;
-    padding:0;
+* {
+  margin: 0;
+  padding: 0;
 }
-
-body{
-    height: 100vh;
-    overflow: hidden;
+:root {
+  --progress-bar-width: 0%;
 }
-.container{
-    display: flex;
-    justify-content: center;
-    align-content: center;
-    height: 100%;
+body {
+  height: 100vh;
+  overflow: hidden;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-content: center;
+}
+.container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  width: 1500px;
+  row-gap: 20px;
+}
+canvas {
+  width: 100%;
+}
+.progress-bar-container {
+  width: 100%;
+  background-color: #ddd;
+  overflow: hidden;
+}
+.progress-bar {
+  width: calc(var(--progress-bar-width));
+  height: 30px;
+  background-color: #04aa6d;
+  text-align: center;
+  line-height: 30px;
+  color: white;
 }
