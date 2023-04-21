@@ -19,11 +19,27 @@ const spaceBetween = 10;
 
 const board = new Image();
 
-let stickAttachX, stickAttachY, angle, arrowTipX, arrowTipY, arrowTail1X, arrowTail1Y, arrowTail2X, arrowTail2Y;
+const BOARD_EDGE_THICKNESS=50
 
-let shootingPower = 0;
+let stickAttachX, stickAttachY, arrowTipX, arrowTipY, arrowTail1X, arrowTail1Y, arrowTail2X, arrowTail2Y;
+
+let shootingVelocity = 0;
+
+let shootingVelocityX=0;
+
+let shootingVelocityY=0;
+
+let shooting = false;
 
 let mouseDownId;
+
+let angle = 0;
+
+let mouseDown = false;
+
+let directionX=1;
+
+let directionY=1;
 
 canvas.width = 582;
 
@@ -34,6 +50,9 @@ function setup() {
 }
 
 document.addEventListener("mousemove", function (event) {
+    if (shooting) {
+        return
+    }
     const deltaX = event.clientX - ball.x;
     const deltaY = event.clientY - ball.y;
     angle = Math.atan2(deltaY, deltaX);
@@ -42,30 +61,25 @@ document.addEventListener("mousemove", function (event) {
 });
 
 document.addEventListener("mousedown", function (event) {
+    mouseDown = true;
     mouseDownId = setInterval(function () {
-        if (shootingPower < 6) {
-            shootingPower += .5;
+        if (shootingVelocity < 6) {
+            shootingVelocity += .5;
         }
         document.documentElement.style
-            .setProperty('--progress-bar-width', `${shootingPower / 6 * 100}%`);
+            .setProperty('--progress-bar-width', `${shootingVelocity / 6 * 100}%`);
     }, 100)
 });
 
 document.addEventListener("mouseup", function (event) {
     console.log("SHOOT!!!")
-
+    mouseDown = false;
+    shooting = true;
     if (mouseDownId) {
         clearInterval(mouseDownId)
     }
-
-    shootingPower = 0;
     document.documentElement.style
         .setProperty('--progress-bar-width', `0%`);
-
-    //TODO - calculate carrom piece velocity
-    // let y = Math.sin(angle) * shootingPower
-    // let x = Math.cos(angle) * shootingPower;
-    // console.log(x, y)
 });
 
 function draw() {
@@ -74,9 +88,19 @@ function draw() {
 
     drawBall()
 
+    if (!mouseDown && shooting) {
+
+        updateBall()
+    }
+
+    ballWallCollision()
+
     let stickEndX = stickAttachX + stick.length * Math.cos(angle)
     let stickEndY = stickAttachY + stick.length * Math.sin(angle)
-    drawArrow(stickAttachX, stickAttachY, stickEndX, stickEndY)
+
+    if (!shooting) {
+        drawArrow(stickAttachX, stickAttachY, stickEndX, stickEndY)
+    }
 
     window.requestAnimationFrame(draw);
 }
@@ -89,12 +113,33 @@ function drawBall() {
     context.closePath();
 }
 
+function updateBall() {
+    
+    if(shootingVelocity<0){
+        shootingVelocity+=.01
+    } 
+    if(shootingVelocity>0){
+        shootingVelocity-=.01
+    } 
+    ball.y += Math.sin(angle) * shootingVelocity*directionY
+    ball.x += Math.cos(angle) * shootingVelocity*directionX
+}
+
+function ballWallCollision(){
+    if(ball.x>canvas.width-BOARD_EDGE_THICKNESS || ball.x<BOARD_EDGE_THICKNESS){
+        directionX=-directionX
+    }
+    if(ball.y>canvas.height-BOARD_EDGE_THICKNESS || ball.y<BOARD_EDGE_THICKNESS){
+        directionY=-directionY
+    }
+}
+
 function drawArrow(x0, y0, x1, y1) {
     const width = 6;
     const headLen = 4;
     const headAngle = Math.PI / 6;
     context.lineWidth = width;
-    context.fillStyle = 'black';
+    context.fillStyle = stick.color;
 
     context.beginPath();
     context.moveTo(x0, y0);
