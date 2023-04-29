@@ -3,50 +3,32 @@ const canvas = document.getElementById("canvas");
 
 const context = canvas.getContext("2d");
 
+const ballRadius=13;
 const balls = [
     {
-        x: 220,
-        y: 120,
-        radius: 11,
+        x: 223,
+        y: 128,
+        radius: ballRadius,
         color: "blue",
         striker: true,
         velocityX: 0,
         velocityY: 0
-    },
-    {
-        x: 170,
-        y: 180,
-        radius: 11,
-        color: "white",
-        velocityX: 0,
-        velocityY: 0
-    },
-    {
-        x: 190,
-        y: 510,
-        radius: 11,
-        color: "white",
-        velocityX: 0,
-        velocityY: 0,
-    },
-    {
-        x: 290,
-        y: 410,
-        radius: 11,
-        color: "black",
-        velocityX: 0,
-        velocityY: 0
-    },
-    {
-        x: 250,
-        y: 426,
-        radius: 11,
-        color: "black",
-
-        velocityX: 0,
-        velocityY: 0
     }
+    
 ]
+for(let i=0;i<3;i++){
+    for(let j=0;j<=i;j++){
+        balls.push({
+            x: 270+ballRadius*2*j+(j*20),
+            y: 256+ballRadius*2*i+(i*30),
+            radius: ballRadius,
+            color: j%2==0?"orange":"black",
+            velocityX: 0,
+            velocityY: 0
+        })
+    }
+}
+
 
 const strikerBall = balls.find((ball) => {
     return ball.striker == true
@@ -66,7 +48,15 @@ const BOARD_EDGE_THICKNESS = 50
 
 const FRICTION = 0.01;
 
-const shootingMaxVelocity=10;
+const shootingMaxVelocity = 100;
+
+const progressBarContainer = document.getElementById('progress-bar-container')
+
+const rangeSlider = document.getElementById('range-slider')
+
+const sliderConfirm = document.getElementById('slider-confirm')
+
+const shootingSlider = document.getElementById('shooting-slider')
 
 let stickAttachX, stickAttachY, arrowTipX, arrowTipY, arrowTail1X, arrowTail1Y, arrowTail2X, arrowTail2Y;
 
@@ -84,12 +74,17 @@ let directionX = 1;
 
 let directionY = 1;
 
+let draggableX, draggableY;
+
+let ready = false;
+
 canvas.width = 582;
 
 canvas.height = 578;
 
 function setup() {
     board.src = "board.jpg";
+    rangeSlider.value = strikerBall.x
 }
 
 document.addEventListener("mousemove", function (event) {
@@ -104,18 +99,28 @@ document.addEventListener("mousemove", function (event) {
 });
 
 document.addEventListener("mousedown", function (event) {
+    if (!ready) {
+        return
+    }
     mouseDown = true;
+    progressBarContainer.style.display='block'
     mouseDownId = setInterval(function () {
         if (shootingVelocity < shootingMaxVelocity) {
-            shootingVelocity += .5;
+            shootingVelocity += 20;
         }
         document.documentElement.style
             .setProperty('--progress-bar-width', `${shootingVelocity / shootingMaxVelocity * 100}%`);
     }, 100)
 });
 
+sliderConfirm.addEventListener('click', function (event) {
+    ready = true;
+})
+
 document.addEventListener("mouseup", function (event) {
-    console.log("SHOOT!!!")
+    if (!ready) {
+        return;
+    }
     mouseDown = false;
     shooting = true;
     if (mouseDownId) {
@@ -124,15 +129,26 @@ document.addEventListener("mouseup", function (event) {
     document.documentElement.style
         .setProperty('--progress-bar-width', `0%`);
 
+    progressBarContainer.style.display='none'
     strikerBall.velocityY = Math.sin(angle) * shootingVelocity * directionY
     strikerBall.velocityX = Math.cos(angle) * shootingVelocity * directionX
 });
+
+rangeSlider.addEventListener("input", function (event) {
+    strikerBall.x = parseInt(event.target.value)
+});
+
+
 
 function draw() {
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.drawImage(board, 0, 0);
 
     drawBalls()
+
+    if (shooting && Math.abs(strikerBall.velocityX)<=0.2 && Math.abs(strikerBall.velocityY) <= 0.2) {
+       reset()
+    }
 
     if (!mouseDown && shooting) {
 
@@ -146,7 +162,7 @@ function draw() {
     let stickEndX = stickAttachX + stick.length * Math.cos(angle)
     let stickEndY = stickAttachY + stick.length * Math.sin(angle)
 
-    if (!shooting) {
+    if (!shooting && ready) {
         drawArrow(stickAttachX, stickAttachY, stickEndX, stickEndY)
     }
 
@@ -169,16 +185,26 @@ function updateBall() {
         ball = balls[i];
         ball.velocityX += dragForce(ball.velocityX, FRICTION);
         ball.velocityY += dragForce(ball.velocityY, FRICTION);
-        ball.x = ball.x +ball.velocityX;
-        ball.y = ball.y +ball.velocityY;
+        ball.x = ball.x + ball.velocityX;
+        ball.y = ball.y + ball.velocityY;
     }
 
+}
+
+function reset() {
+    shootingVelocity = 0;
+    strikerBall.x = 223
+    strikerBall.y = 128
+    mouseDown = false;
+    shooting = false;
+    ready=false;
+    rangeSlider.value = strikerBall.x
 }
 
 
 function dragForce(velocity, coefficient) {
     return -1 * coefficient * velocity;
-  }
+}
 
 function ballWallCollision() {
 
@@ -272,3 +298,21 @@ function drawArrow(x0, y0, x1, y1) {
 setup()
 
 draw()
+
+
+
+// canvas.addEventListener("mousedown", function (event) {
+//     const rect = canvas.getBoundingClientRect()
+//     const x = event.clientX - rect.left
+//     const y = event.clientY - rect.top
+//     console.log("x: " + x + " y: " + y)
+// })
+
+// document.addEventListener("mouseup", function (event) {
+//     const mouseX = event.clientX - canvas.offsetLeft
+//     const mouseY = event.clientY - canvas.offsetTop
+//     const bounds = canvas.getBoundingClientRect();
+//     strikerBall.x = (mouseX / bounds.width) * canvas.width;
+//     strikerBall.y = (mouseY / bounds.height) * canvas.height;
+//     console.log(strikerBall)
+// })

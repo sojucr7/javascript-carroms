@@ -2,13 +2,23 @@
 <html>
   <head>
     <title>Carroms Game</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
     <link href="styles/main.css" rel="stylesheet"/>
   </head>
   <body>
     <div class="container">
       <canvas id="canvas" class="canvas"></canvas>
-      <div class="progress-bar-container">
+      <div class="progress-bar-container" id="progress-bar-container">        
         <div class="progress-bar"></div>
+      </div>
+
+      <div class="striker-position-container">
+        <label>Adjust striker:</label>
+        <div>
+        <input type="range" class="range-slider" min="186" max="398" step="1" value="0" id="range-slider"/>
+        
+        <button id="slider-confirm">Ok</button>
+      </div>
       </div>
     </div>
     <script src="script/game.js"></script>

@@ -6,7 +6,7 @@
   --progress-bar-width: 0%;
 }
 body {
-  height: 100vh;
+  height: 100vh;  
   overflow: hidden;
   width: 100%;
   display: flex;
@@ -19,7 +19,6 @@ body {
   justify-content: center;
   align-items: center;
   height: 100%;
-  width: 1500px;
   row-gap: 20px;
 }
 canvas {
@@ -29,6 +28,17 @@ canvas {
   width: 100%;
   background-color: #ddd;
   overflow: hidden;
+  display: none;
+}
+.striker-position-container{
+  width: 100%;
+}
+.range-slider{
+  width: 80%;
+}
+button{
+  width: 10%;
+  padding: 10px;
 }
 .progress-bar {
   width: calc(var(--progress-bar-width));
