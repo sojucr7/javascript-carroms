@@ -1,9 +1,19 @@
 //reference - http://www.java2s.com/example/javascript-book/multiple-balls-bouncing-and-colliding.html
+//https://codepen.io/ztyler/pen/LergVR
 const canvas = document.getElementById("canvas");
 
 const context = canvas.getContext("2d");
 
-const ballRadius=13;
+const ballRadius = 14;
+
+const holes={
+ topLeftHole:[80,88],
+ topRightHole:[493,88],
+ bottomLeftHole:[80,484],
+ bottomRightHole:[493,484]
+}
+
+
 const balls = [
     {
         x: 223,
@@ -14,15 +24,14 @@ const balls = [
         velocityX: 0,
         velocityY: 0
     }
-    
 ]
-for(let i=0;i<3;i++){
-    for(let j=0;j<=i;j++){
+for (let i = 0; i < 4; i++) {
+    for (let j = 0; j <= 3; j++) {
         balls.push({
-            x: 270+ballRadius*2*j+(j*20),
-            y: 256+ballRadius*2*i+(i*30),
+            x: 250 + ballRadius * 2 * j ,
+            y: 256 + ballRadius * 2 * i ,
             radius: ballRadius,
-            color: j%2==0?"orange":"black",
+            color: j % 2 == 0 ? "orange" : "black",
             velocityX: 0,
             velocityY: 0
         })
@@ -99,14 +108,15 @@ document.addEventListener("mousemove", function (event) {
 });
 
 document.addEventListener("mousedown", function (event) {
+    console.log(event.offsetX,event.offsetY)
     if (!ready) {
         return
     }
     mouseDown = true;
-    progressBarContainer.style.display='block'
+    progressBarContainer.style.display = 'block'
     mouseDownId = setInterval(function () {
         if (shootingVelocity < shootingMaxVelocity) {
-            shootingVelocity += 20;
+            shootingVelocity += 5;
         }
         document.documentElement.style
             .setProperty('--progress-bar-width', `${shootingVelocity / shootingMaxVelocity * 100}%`);
@@ -129,7 +139,7 @@ document.addEventListener("mouseup", function (event) {
     document.documentElement.style
         .setProperty('--progress-bar-width', `0%`);
 
-    progressBarContainer.style.display='none'
+    progressBarContainer.style.display = 'none'
     strikerBall.velocityY = Math.sin(angle) * shootingVelocity * directionY
     strikerBall.velocityX = Math.cos(angle) * shootingVelocity * directionX
 });
@@ -146,8 +156,8 @@ function draw() {
 
     drawBalls()
 
-    if (shooting && Math.abs(strikerBall.velocityX)<=0.2 && Math.abs(strikerBall.velocityY) <= 0.2) {
-       reset()
+    if (shooting && Math.abs(strikerBall.velocityX) <= 0.2 && Math.abs(strikerBall.velocityY) <= 0.2) {
+        reset()
     }
 
     if (!mouseDown && shooting) {
@@ -158,6 +168,8 @@ function draw() {
     ballWallCollision()
 
     ballBallCollison()
+
+    //updateScore()
 
     let stickEndX = stickAttachX + stick.length * Math.cos(angle)
     let stickEndY = stickAttachY + stick.length * Math.sin(angle)
@@ -197,7 +209,7 @@ function reset() {
     strikerBall.y = 128
     mouseDown = false;
     shooting = false;
-    ready=false;
+    ready = false;
     rangeSlider.value = strikerBall.x
 }
 
@@ -225,53 +237,64 @@ function ballBallCollison() {
         ball = balls[i];
         for (let j = i + 1; j < balls.length; j++) {
             testBall = balls[j];
-            if (isCirclesCollided(ball, testBall)) {
-                resolveBallCollision(ball, testBall)
+            var collision = isCirclesCollided(ball, testBall)
+
+            if (collision[0]) {
+                adjustPositions(ball, testBall, collision[1]);
+                resolveBallCollision(ball, testBall);
             }
         }
     }
 }
 
-function isCirclesCollided(ball1, ball2) {
-    let retval = false;
-    let dx = ball1.x - ball2.x;
-    let dy = ball1.y - ball2.y;
-    let distance = (dx * dx + dy * dy);
-    if (distance <= (ball1.radius + ball2.radius) * (ball1.radius + ball2.radius)) {
-        retval = true;
-    }
-    return retval;
+function isCirclesCollided(ballA, ballB) {
+
+    var rSum = ballA.radius + ballB.radius;
+    var dx = ballB.x - ballA.x;
+    var dy = ballB.y - ballA.y;
+    return [
+        rSum * rSum > dx * dx + dy * dy,
+        rSum - Math.sqrt(dx * dx + dy * dy),
+    ];
 }
 
-function resolveBallCollision(ball1, ball2) {
+function resolveBallCollision(ballA, ballB) {
 
-    let dx = ball1.x - ball2.x;
-    let dy = ball1.y - ball2.y;
+    var relVel = [ballB.velocityX - ballA.velocityX, ballB.velocityY - ballA.velocityY];
+    var norm = [ballB.x - ballA.x, ballB.y - ballA.y];
+    var mag = Math.sqrt(norm[0] * norm[0] + norm[1] * norm[1]);
+    norm = [norm[0] / mag, norm[1] / mag];
 
-    let collisionAngle = Math.atan2(dy, dx);
+    var velAlongNorm = relVel[0] * norm[0] + relVel[1] * norm[1];
+    if (velAlongNorm > 0) return;
 
-    let speed1 = Math.sqrt(ball1.velocityX * ball1.velocityX + ball1.velocityY * ball1.velocityY);
-    let speed2 = Math.sqrt(ball2.velocityX * ball2.velocityX + ball2.velocityY * ball2.velocityY);
+    var bounce = 0.7;
+    var j = -(1 + bounce) * velAlongNorm;
+    j /= 1 / ballA.radius + 1 / ballB.radius;
 
-    let direction1 = Math.atan2(ball1.velocityY, ball1.velocityX);
-    let direction2 = Math.atan2(ball2.velocityY, ball2.velocityX);
+    var impulse = [j * norm[0], j * norm[1]];
+    ballA.velocityX -= (1 / ballA.radius) * impulse[0];
+    ballA.velocityY -= (1 / ballA.radius) * impulse[1];
+    ballB.velocityX += (1 / ballB.radius) * impulse[0];
+    ballB.velocityY += (1 / ballB.radius) * impulse[1];
+}
 
-    let velocityX1 = speed1 * Math.cos(direction1 - collisionAngle);
-    let velocityY1 = speed1 * Math.sin(direction1 - collisionAngle);
-    let velocityX2 = speed2 * Math.cos(direction2 - collisionAngle);
-    let velocityY2 = speed2 * Math.sin(direction2 - collisionAngle);
 
-    let finalVelocityX1 = ((ball1.radius - ball2.radius) * velocityX1 + (ball2.radius + ball2.radius) * velocityX2) / (ball1.radius + ball2.radius);
-    let finalVelocityX2 = ((ball1.radius + ball1.radius) * velocityX1 + (ball2.radius - ball1.radius) * velocityX2) / (ball1.radius + ball2.radius);
+function adjustPositions(ballA, ballB, depth) {
+    //Inefficient implementation for now
+    const percent = 0.2;
+    const slop = 0.01;
+    var correction =
+        (Math.max(depth - slop, 0) / (1 / ballA.radius + 1 / ballB.radius)) * percent;
 
-    let finalVelocityY1 = velocityY1;
-    let finalVelocityY2 = velocityY2;
-
-    ball1.velocityX = Math.cos(collisionAngle) * finalVelocityX1 + Math.cos(collisionAngle + Math.PI / 2) * finalVelocityY1;
-    ball1.velocityY = Math.sin(collisionAngle) * finalVelocityX1 + Math.sin(collisionAngle + Math.PI / 2) * finalVelocityY1;
-    ball2.velocityX = Math.cos(collisionAngle) * finalVelocityX2 + Math.cos(collisionAngle + Math.PI / 2) * finalVelocityY2;
-    ball2.velocityY = Math.sin(collisionAngle) * finalVelocityX2 + Math.sin(collisionAngle + Math.PI / 2) * finalVelocityY2;
-
+    var norm = [ballB.x - ballA.x, ballB.y - ballA.y];
+    var mag = Math.sqrt(norm[0] * norm[0] + norm[1] * norm[1]);
+    norm = [norm[0] / mag, norm[1] / mag];
+    correction = [correction * norm[0], correction * norm[1]];
+    ballA.x -= (1 / ballA.radius) * correction[0];
+    ballA.y -= (1 / ballA.radius) * correction[1];
+    ballB.x += (1 / ballB.radius) * correction[0];
+    ballB.y += (1 / ballB.radius) * correction[1];
 }
 
 function drawArrow(x0, y0, x1, y1) {
@@ -295,9 +318,63 @@ function drawArrow(x0, y0, x1, y1) {
     context.fill();
 }
 
+function updateScore(){
+    for (let i = balls.length-1; i >=0; i--) {
+        if(balls[i].striker){
+            continue
+        }
+        if(balls[i].x<holes.topLeftHole[0] && balls[i].y<holes.topLeftHole[1]){
+            balls[i].velocityX=0;
+            balls[i].velocityY=0;
+            balls[i].x=64
+            balls[i].y=73
+            setTimeout(function(){
+                balls.splice(i,1)
+            },500)
+            
+            continue;
+        }
+
+        if(balls[i].x>holes.topRightHole[0] && balls[i].y<holes.topRightHole[1]){
+            balls[i].velocityX=0;
+            balls[i].velocityY=0;
+            balls[i].x=519
+            balls[i].y=65
+            setTimeout(function(){
+                balls.splice(i,1)
+            },500)
+            continue;
+        }
+
+        if(balls[i].x>holes.bottomRightHole[0] && balls[i].y>holes.bottomRightHole[1]){
+            balls[i].velocityX=0;
+            balls[i].velocityY=0;
+            balls[i].x=516
+            balls[i].y=516
+            setTimeout(function(){
+                balls.splice(i,1)
+            },500)
+            continue;
+        }
+
+        if(balls[i].x<holes.bottomLeftHole[0] && balls[i].y>holes.bottomLeftHole[1]){
+            balls[i].velocityX=0;
+            balls[i].velocityY=0;
+            balls[i].x=66
+            balls[i].y=513
+            setTimeout(function(){
+                balls.splice(i,1)
+            },500)
+            continue;
+        }
+
+    }
+}
+
 setup()
 
 draw()
+
 
 
 
