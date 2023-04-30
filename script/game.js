@@ -108,7 +108,6 @@ document.addEventListener("mousemove", function (event) {
 });
 
 document.addEventListener("mousedown", function (event) {
-    console.log(event.offsetX,event.offsetY)
     if (!ready) {
         return
     }
@@ -169,7 +168,7 @@ function draw() {
 
     ballBallCollison()
 
-    //updateScore()
+    updateScore()
 
     let stickEndX = stickAttachX + stick.length * Math.cos(angle)
     let stickEndY = stickAttachY + stick.length * Math.sin(angle)
@@ -211,6 +210,12 @@ function reset() {
     shooting = false;
     ready = false;
     rangeSlider.value = strikerBall.x
+    for (let i = 0; i < balls.length; i++) {
+        ball = balls[i];
+        ball.velocityX = 0;
+        ball.velocityY = 0;
+
+    }
 }
 
 
@@ -328,9 +333,8 @@ function updateScore(){
             balls[i].velocityY=0;
             balls[i].x=64
             balls[i].y=73
-            setTimeout(function(){
-                balls.splice(i,1)
-            },500)
+            balls.splice(i,1)
+            i--;
             
             continue;
         }
@@ -340,9 +344,8 @@ function updateScore(){
             balls[i].velocityY=0;
             balls[i].x=519
             balls[i].y=65
-            setTimeout(function(){
-                balls.splice(i,1)
-            },500)
+            balls.splice(i,1)
+            i--;
             continue;
         }
 
@@ -351,9 +354,8 @@ function updateScore(){
             balls[i].velocityY=0;
             balls[i].x=516
             balls[i].y=516
-            setTimeout(function(){
-                balls.splice(i,1)
-            },500)
+            balls.splice(i,1)
+            i--;
             continue;
         }
 
@@ -362,9 +364,8 @@ function updateScore(){
             balls[i].velocityY=0;
             balls[i].x=66
             balls[i].y=513
-            setTimeout(function(){
-                balls.splice(i,1)
-            },500)
+            balls.splice(i,1)
+            i--;
             continue;
         }
 
