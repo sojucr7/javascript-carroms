@@ -190,10 +190,12 @@ function draw() {
 
         updateBall()
     }
+    if (shooting){
+        ballWallCollision()
 
-    ballWallCollision()
-
-    ballBallCollison()
+        ballBallCollison()
+    }
+   
 
     updateScore()
 
