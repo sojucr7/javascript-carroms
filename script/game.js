@@ -6,11 +6,11 @@ const context = canvas.getContext("2d");
 
 const ballRadius = 14;
 
-const holes={
- topLeftHole:[80,88],
- topRightHole:[493,88],
- bottomLeftHole:[80,484],
- bottomRightHole:[493,484]
+const holes = {
+    topLeftHole: [80, 88],
+    topRightHole: [493, 88],
+    bottomLeftHole: [80, 484],
+    bottomRightHole: [493, 484]
 }
 
 
@@ -28,8 +28,8 @@ const balls = [
 for (let i = 0; i < 4; i++) {
     for (let j = 0; j <= 3; j++) {
         balls.push({
-            x: 250 + ballRadius * 2 * j ,
-            y: 256 + ballRadius * 2 * i ,
+            x: 250 + ballRadius * 2 * j,
+            y: 256 + ballRadius * 2 * i,
             radius: ballRadius,
             color: j % 2 == 0 ? "orange" : "black",
             velocityX: 0,
@@ -46,7 +46,7 @@ const strikerBall = balls.find((ball) => {
 const stick = {
     length: 50,
     thickness: 10,
-    color: "red",
+    color: "black",
 };
 
 const spaceBetween = 10;
@@ -60,8 +60,6 @@ const FRICTION = 0.01;
 const shootingMaxVelocity = 100;
 
 const progressBarContainer = document.getElementById('progress-bar-container')
-
-const rangeSlider = document.getElementById('range-slider')
 
 const sliderConfirm = document.getElementById('slider-confirm')
 
@@ -93,10 +91,37 @@ canvas.height = 578;
 
 function setup() {
     board.src = "board.jpg";
-    rangeSlider.value = strikerBall.x
 }
 
+function getMousePos(evt) {
+    var rect = canvas.getBoundingClientRect();
+    return {
+        x: evt.clientX - rect.left,
+        y: evt.clientY - rect.top
+    };
+}
+
+function isStrikerDragging(mousePosition) {
+     return mousePosition.y>=110 && mousePosition.y<=140 && mousePosition.x>=187 && mousePosition.x <= 398
+}
+canvas.addEventListener("mousemove", (event) => {
+    if (shooting) {
+        return
+    }
+    let mousePosition = getMousePos(event)
+    if (
+        isStrikerDragging(mousePosition)) {
+        strikerBall.x = mousePosition.x
+        ready=false
+    }else{
+        ready=true
+    }
+})
 document.addEventListener("mousemove", function (event) {
+    let mousePosition = getMousePos(event)
+    if(isStrikerDragging(mousePosition)){
+       return;
+    }
     if (shooting) {
         return
     }
@@ -108,8 +133,12 @@ document.addEventListener("mousemove", function (event) {
 });
 
 document.addEventListener("mousedown", function (event) {
-    if (!ready) {
-        return
+    let mousePosition = getMousePos(event)
+    if(isStrikerDragging(mousePosition)){
+       return;
+    }
+    if(strikerBall.velocityX || strikerBall.velocityY){
+        return;
     }
     mouseDown = true;
     progressBarContainer.style.display = 'block'
@@ -122,18 +151,20 @@ document.addEventListener("mousedown", function (event) {
     }, 100)
 });
 
-sliderConfirm.addEventListener('click', function (event) {
-    ready = true;
-})
+
 
 document.addEventListener("mouseup", function (event) {
-    if (!ready) {
-        return;
+    let mousePosition = getMousePos(event)
+    if(isStrikerDragging(mousePosition)){
+       return;
     }
     mouseDown = false;
     shooting = true;
     if (mouseDownId) {
         clearInterval(mouseDownId)
+    }
+    if(strikerBall.velocityX || strikerBall.velocityY){
+        return;
     }
     document.documentElement.style
         .setProperty('--progress-bar-width', `0%`);
@@ -141,10 +172,6 @@ document.addEventListener("mouseup", function (event) {
     progressBarContainer.style.display = 'none'
     strikerBall.velocityY = Math.sin(angle) * shootingVelocity * directionY
     strikerBall.velocityX = Math.cos(angle) * shootingVelocity * directionX
-});
-
-rangeSlider.addEventListener("input", function (event) {
-    strikerBall.x = parseInt(event.target.value)
 });
 
 
@@ -209,7 +236,6 @@ function reset() {
     mouseDown = false;
     shooting = false;
     ready = false;
-    rangeSlider.value = strikerBall.x
     for (let i = 0; i < balls.length; i++) {
         ball = balls[i];
         ball.velocityX = 0;
@@ -303,6 +329,7 @@ function adjustPositions(ballA, ballB, depth) {
 }
 
 function drawArrow(x0, y0, x1, y1) {
+    
     const width = 6;
     const headLen = 4;
     const headAngle = Math.PI / 6;
@@ -323,48 +350,48 @@ function drawArrow(x0, y0, x1, y1) {
     context.fill();
 }
 
-function updateScore(){
-    for (let i = balls.length-1; i >=0; i--) {
-        if(balls[i].striker){
+function updateScore() {
+    for (let i = balls.length - 1; i >= 0; i--) {
+        if (balls[i].striker) {
             continue
         }
-        if(balls[i].x<holes.topLeftHole[0] && balls[i].y<holes.topLeftHole[1]){
-            balls[i].velocityX=0;
-            balls[i].velocityY=0;
-            balls[i].x=64
-            balls[i].y=73
-            balls.splice(i,1)
+        if (balls[i].x < holes.topLeftHole[0] && balls[i].y < holes.topLeftHole[1]) {
+            balls[i].velocityX = 0;
+            balls[i].velocityY = 0;
+            balls[i].x = 64
+            balls[i].y = 73
+            balls.splice(i, 1)
             i--;
-            
+
             continue;
         }
 
-        if(balls[i].x>holes.topRightHole[0] && balls[i].y<holes.topRightHole[1]){
-            balls[i].velocityX=0;
-            balls[i].velocityY=0;
-            balls[i].x=519
-            balls[i].y=65
-            balls.splice(i,1)
-            i--;
-            continue;
-        }
-
-        if(balls[i].x>holes.bottomRightHole[0] && balls[i].y>holes.bottomRightHole[1]){
-            balls[i].velocityX=0;
-            balls[i].velocityY=0;
-            balls[i].x=516
-            balls[i].y=516
-            balls.splice(i,1)
+        if (balls[i].x > holes.topRightHole[0] && balls[i].y < holes.topRightHole[1]) {
+            balls[i].velocityX = 0;
+            balls[i].velocityY = 0;
+            balls[i].x = 519
+            balls[i].y = 65
+            balls.splice(i, 1)
             i--;
             continue;
         }
 
-        if(balls[i].x<holes.bottomLeftHole[0] && balls[i].y>holes.bottomLeftHole[1]){
-            balls[i].velocityX=0;
-            balls[i].velocityY=0;
-            balls[i].x=66
-            balls[i].y=513
-            balls.splice(i,1)
+        if (balls[i].x > holes.bottomRightHole[0] && balls[i].y > holes.bottomRightHole[1]) {
+            balls[i].velocityX = 0;
+            balls[i].velocityY = 0;
+            balls[i].x = 516
+            balls[i].y = 516
+            balls.splice(i, 1)
+            i--;
+            continue;
+        }
+
+        if (balls[i].x < holes.bottomLeftHole[0] && balls[i].y > holes.bottomLeftHole[1]) {
+            balls[i].velocityX = 0;
+            balls[i].velocityY = 0;
+            balls[i].x = 66
+            balls[i].y = 513
+            balls.splice(i, 1)
             i--;
             continue;
         }
@@ -375,22 +402,3 @@ function updateScore(){
 setup()
 
 draw()
-
-
-
-
-// canvas.addEventListener("mousedown", function (event) {
-//     const rect = canvas.getBoundingClientRect()
-//     const x = event.clientX - rect.left
-//     const y = event.clientY - rect.top
-//     console.log("x: " + x + " y: " + y)
-// })
-
-// document.addEventListener("mouseup", function (event) {
-//     const mouseX = event.clientX - canvas.offsetLeft
-//     const mouseY = event.clientY - canvas.offsetTop
-//     const bounds = canvas.getBoundingClientRect();
-//     strikerBall.x = (mouseX / bounds.width) * canvas.width;
-//     strikerBall.y = (mouseY / bounds.height) * canvas.height;
-//     console.log(strikerBall)
-// })
